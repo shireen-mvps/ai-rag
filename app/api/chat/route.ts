@@ -30,17 +30,25 @@ export async function POST(req: Request) {
     const ns = vectorIndex.namespace(docId);
     const results = await ns.query({
       data: retrievalQuery,
-      topK: 4,
+      topK: 5,
       includeMetadata: true,
+      includeData: true, // fallback: raw chunk text if metadata.text is missing
     });
 
+    console.log("[chat] docId:", docId);
+    console.log("[chat] results count:", results.length);
+    console.log("[chat] scores:", results.map((r) => r.score));
+    console.log("[chat] has metadata text:", results.map((r) => !!r.metadata?.text));
+    console.log("[chat] has data:", results.map((r) => !!r.data));
+
     const sources = results
-      .filter((r) => r.score > 0.5) // only include reasonably relevant chunks
       .map((r) => ({
-        text: r.metadata?.text as string,
-        chunkIndex: r.metadata?.chunkIndex as number,
+        // prefer metadata.text; fall back to raw data string from the index
+        text: (r.metadata?.text as string | undefined) ?? (r.data as string | undefined) ?? "",
+        chunkIndex: (r.metadata?.chunkIndex as number | undefined) ?? 0,
         score: Math.round((r.score ?? 0) * 100),
-      }));
+      }))
+      .filter((s) => s.text.trim().length > 0);
 
     const context =
       sources.length > 0
@@ -66,7 +74,7 @@ Format your answers clearly using markdown:
 - Use numbered lists or bullet points when listing items, steps, or multiple points
 - Use **bold** for key terms or important information
 - Use short paragraphs — avoid long walls of text
-- When you use information from the context, reference it naturally (e.g., "According to the document..." or "The document mentions...")
+- After each statement that draws on a specific source, place the source number in brackets immediately after — for example: "The report found error rates dropped by 40% [1]." or "Agents are deployed in three tiers [2][3]."
 
 Context from the document:
 ${context}`,

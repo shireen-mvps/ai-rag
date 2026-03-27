@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { useChat } from "ai/react";
 import type { DocMeta, StoredMessage } from "@/types";
 import { generateDocId, loadStorage, STORAGE_KEY } from "@/lib/storage";
@@ -55,7 +55,7 @@ export function useDocSession() {
   const [uploadStep, setUploadStep] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const { messages, input, setInput, handleSubmit, isLoading, data, setMessages } = useChat({
+  const { messages, input, setInput, handleSubmit: _handleSubmit, isLoading, data, setMessages } = useChat({
     api: "/api/chat",
     body: { docId: activeDocId },
     initialMessages: (() => {
@@ -260,6 +260,12 @@ export function useDocSession() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  // Always inject the current activeDocId at submit time — prevents stale closure in useChat body
+  const handleSubmit = useCallback(
+    (e: FormEvent<HTMLFormElement>) => _handleSubmit(e, { body: { docId: activeDocId } }),
+    [_handleSubmit, activeDocId]
+  );
 
   const sources = useSources(data);
 

@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: #09090e;
     color: #ede8dc;
@@ -14,18 +18,9 @@
     scrollbar-color: #3e3e52 transparent;
   }
 
-  *::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  *::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  *::-webkit-scrollbar-thumb {
-    background-color: #3e3e52;
-    border-radius: 2px;
-  }
+  *::-webkit-scrollbar { width: 4px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background-color: #3e3e52; border-radius: 2px; }
 }
 
 /* ─── Button glows ─── */
@@ -49,31 +44,223 @@
     0 0 18px rgba(232, 160, 32, 0.35);
 }
 
-/* ─── Scroll reveal ─── */
+/* ─── Scroll reveal — dramatic scale + slide ─── */
 
 [data-reveal] {
   opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(30px) scale(0.97);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 [data-reveal].is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 [data-reveal][data-delay="1"] { transition-delay: 0.1s; }
 [data-reveal][data-delay="2"] { transition-delay: 0.22s; }
 [data-reveal][data-delay="3"] { transition-delay: 0.34s; }
+[data-reveal][data-delay="4"] { transition-delay: 0.46s; }
 
-/* ─── Card glows ─── */
+/* ─── Card glow — strong lift + neon ─── */
 
 .card-glow {
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.25s ease;
 }
 .card-glow:hover {
-  border-color: rgba(232, 160, 32, 0.35) !important;
+  border-color: rgba(232, 160, 32, 0.55) !important;
+  transform: translateY(-3px);
   box-shadow:
-    0 0 0 1px rgba(232, 160, 32, 0.15),
-    0 0 20px rgba(232, 160, 32, 0.12),
-    0 0 50px rgba(232, 160, 32, 0.06);
+    0 0 0 1px rgba(232, 160, 32, 0.28),
+    0 0 16px rgba(232, 160, 32, 0.5),
+    0 0 45px rgba(232, 160, 32, 0.22),
+    0 0 90px rgba(232, 160, 32, 0.1);
+}
+
+/* ─── Toast ─── */
+
+@keyframes toast-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.toast-enter {
+  animation: toast-slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Mobile tab active ─── */
+
+.mobile-tab-active {
+  background-color: #e8a020;
+  color: #09090e;
+  font-weight: 600;
+}
+
+/* ─── Hero grid — slowly drifts ─── */
+
+@keyframes grid-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 52px 52px; }
+}
+
+.hero-grid-overlay {
+  background-image:
+    linear-gradient(rgba(232, 160, 32, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 160, 32, 0.045) 1px, transparent 1px);
+  background-size: 52px 52px;
+  animation: grid-drift 22s linear infinite;
+}
+
+/* ─── Scan line — sweeps hero once on load ─── */
+
+@keyframes scan-down {
+  0%   { transform: translateY(0);    opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 0.7; }
+  100% { transform: translateY(700px); opacity: 0; }
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(232, 160, 32, 0.9) 50%, transparent 100%);
+  box-shadow:
+    0 0 8px rgba(232, 160, 32, 0.6),
+    0 0 24px rgba(232, 160, 32, 0.25);
+  pointer-events: none;
+  animation: scan-down 5s ease-in-out 0.8s 1 forwards;
+  opacity: 0;
+}
+
+/* ─── Floating badge ─── */
+
+@keyframes float-bob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+.float-anim {
+  animation: float-bob 5s ease-in-out infinite;
+}
+
+/* ─── Divider shimmer ─── */
+
+@keyframes divider-shimmer {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 300% 0; }
+}
+
+.divider-accent {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 10%,
+    rgba(232, 160, 32, 0.8) 50%,
+    transparent 90%
+  );
+  background-size: 200% 100%;
+  animation: divider-shimmer 6s ease-in-out infinite;
+  filter: drop-shadow(0 0 5px rgba(232, 160, 32, 0.4));
+}
+
+/* ─── Glow gold text ─── */
+
+.glow-gold {
+  color: #e8a020;
+  text-shadow:
+    0 0 24px rgba(232, 160, 32, 0.6),
+    0 0 60px rgba(232, 160, 32, 0.25);
+}
+
+/* ─── Sci-fi corner brackets ─── */
+
+.corner-bracket { position: relative; }
+
+.corner-bracket::before {
+  content: '';
+  position: absolute;
+  top: 10px; left: 10px;
+  width: 14px; height: 14px;
+  border-top: 1px solid rgba(232, 160, 32, 0.4);
+  border-left: 1px solid rgba(232, 160, 32, 0.4);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.corner-bracket::after {
+  content: '';
+  position: absolute;
+  bottom: 10px; right: 10px;
+  width: 14px; height: 14px;
+  border-bottom: 1px solid rgba(232, 160, 32, 0.4);
+  border-right: 1px solid rgba(232, 160, 32, 0.4);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.corner-bracket:hover::before,
+.corner-bracket:hover::after {
+  opacity: 1;
+  border-color: rgba(232, 160, 32, 0.85);
+}
+
+/* ─── Gradient border wrapper ─── */
+
+.gradient-border {
+  position: relative;
+  border-radius: 1.25rem;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(232, 160, 32, 0.4) 0%,
+    rgba(232, 160, 32, 0.06) 40%,
+    rgba(232, 160, 32, 0.28) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+.gradient-border > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Pulsing icon ring ─── */
+
+@keyframes icon-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 160, 32, 0.2); }
+  50%       { box-shadow: 0 0 0 6px rgba(232, 160, 32, 0); }
+}
+
+.icon-pulse {
+  animation: icon-pulse 3s ease-in-out infinite;
+}
+
+/* ─── Animated step connector arrow ─── */
+
+@keyframes arrow-move {
+  0%, 100% { transform: translateX(0);    opacity: 0.35; }
+  50%       { transform: translateX(8px); opacity: 0.85; }
+}
+
+.step-arrow {
+  animation: arrow-move 2s ease-in-out infinite;
+  color: rgba(232, 160, 32, 0.55);
+}
+
+/* ─── Step number fade-in glow ─── */
+
+.step-num-glow {
+  color: rgba(232, 160, 32, 0.07);
+  transition: color 0.5s ease;
+}
+.is-visible .step-num-glow {
+  color: rgba(232, 160, 32, 0.1);
+  text-shadow: 0 0 60px rgba(232, 160, 32, 0.15);
 }
