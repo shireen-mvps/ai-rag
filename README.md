@@ -4,7 +4,7 @@
 
 **Konfide** is a full-stack RAG (Retrieval-Augmented Generation) application built for organisations that need AI-powered document Q&A without compromising on confidentiality. Upload any PDF — policy, contract, report, or manual — and get source-cited answers instantly. Nothing is sent to OpenAI. Nothing trains an AI model. Nothing leaves your stack.
 
-**Live demo:** [konfide.vercel.app](https://konfide.vercel.app) <!-- update after deploy -->
+**Live demo:** [konfide on Vercel](https://ai-bo3b87p1g-shireens-projects-6d64f22e.vercel.app)
 
 ---
 
@@ -158,8 +158,8 @@ konfide/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/shireen-mvps/ai-rag.git
-cd ai-rag
+git clone https://github.com/shireen-mvps/konfide.git
+cd konfide
 ```
 
 ### 2. Install dependencies
