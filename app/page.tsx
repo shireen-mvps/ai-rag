@@ -89,9 +89,9 @@ const USE_CASES = [
 ];
 
 const HOW_IT_WORKS = [
-  { n: "01", title: "Upload your document",    desc: "PDF is parsed, chunked into segments, and embedded. Nothing is sent to OpenAI." },
+  { n: "01", title: "Upload your document", desc: "PDF is parsed, chunked into segments, and embedded. Nothing is sent to OpenAI." },
   { n: "02", title: "Stored in private vectors", desc: "Embeddings go into your isolated Upstash Vector namespace — siloed per document." },
-  { n: "03", title: "Ask. Get cited answers.",  desc: "Claude retrieves the most relevant passages and streams an answer with source citations." },
+  { n: "03", title: "Ask. Get cited answers.", desc: "Claude retrieves the most relevant passages and streams an answer with source citations." },
 ];
 
 /* ─── Component ─── */
@@ -103,12 +103,16 @@ export default function Home() {
     messages, input, setInput, handleSubmit, isLoading, sources,
     uploading, uploadStep, uploadError, handleUpload,
     switchDoc, startNewUpload, deleteDoc, exportTranscript,
+    rateLimited, setRateLimited,
   } = useDocSession();
 
+  // Replace with your Tally / Google Form / Typeform waitlist URL
+  const WAITLIST_URL = "https://tally.so/r/1AMLNl";
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const formRef        = useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [activeTab, setActiveTab] = useState<"upload" | "chat">("upload");
-  const [toasts, setToasts]       = useState<ToastItem[]>([]);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const addToast = useCallback((message: string, variant: ToastItem["variant"] = "info") => {
     const id = Math.random().toString(36).slice(2);
@@ -189,7 +193,7 @@ export default function Home() {
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-sm text-k-text/70 font-mono">
-            <a href="#use-cases"    className="hover:text-k-accent transition-colors">Who it&apos;s for</a>
+            <a href="#use-cases" className="hover:text-k-accent transition-colors">Who it&apos;s for</a>
             <a href="#how-it-works" className="hover:text-k-accent transition-colors">How it works</a>
           </nav>
 
@@ -286,9 +290,9 @@ export default function Home() {
       <div className="border-y border-white/[0.05] bg-k-surface relative z-10">
         <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.06]">
           {[
-            { Icon: IconLock,  title: "Privacy First", body: "Your files never train any AI model, ever." },
-            { Icon: IconCite,  title: "Any PDF",       body: "Policies, contracts, reports, manuals." },
-            { Icon: IconBolt,  title: "Source-Cited",  body: "Every answer references the exact passage." },
+            { Icon: IconLock, title: "Privacy First", body: "Your files never train any AI model, ever." },
+            { Icon: IconCite, title: "Any PDF", body: "Policies, contracts, reports, manuals." },
+            { Icon: IconBolt, title: "Source-Cited", body: "Every answer references the exact passage." },
           ].map(({ Icon, title, body }) => (
             <div key={title} className="px-8 py-8 text-center">
               <div className="w-10 h-10 rounded-xl bg-k-accent/10 border border-k-accent/15 flex items-center justify-center text-k-accent mx-auto mb-3 icon-pulse">
@@ -414,9 +418,8 @@ export default function Home() {
           <div className="flex lg:hidden items-center bg-k-surface border border-white/[0.07] rounded-xl p-1 mb-4 gap-1">
             <button
               onClick={() => setActiveTab("upload")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === "upload" ? "mobile-tab-active" : "text-k-muted hover:text-k-text"
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all ${activeTab === "upload" ? "mobile-tab-active" : "text-k-muted hover:text-k-text"
+                }`}
             >
               <IconCite className="w-3.5 h-3.5" />
               Document
@@ -424,9 +427,8 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab("chat")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === "chat" ? "mobile-tab-active" : "text-k-muted hover:text-k-text"
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all ${activeTab === "chat" ? "mobile-tab-active" : "text-k-muted hover:text-k-text"
+                }`}
             >
               <IconChat className="w-3.5 h-3.5" />
               Chat
@@ -573,7 +575,7 @@ export default function Home() {
                         <div className="flex gap-1">
                           {[0, 1, 2].map((i) => (
                             <div key={i} className="w-1.5 h-1.5 rounded-full bg-k-accent animate-bounce"
-                                 style={{ animationDelay: `${i * 0.15}s` }} />
+                              style={{ animationDelay: `${i * 0.15}s` }} />
                           ))}
                         </div>
                         <span className="text-sm text-k-text/65 font-mono">Searching document...</span>
@@ -630,13 +632,76 @@ export default function Home() {
           <p className="text-sm text-k-text/65 font-mono text-center sm:text-right">
             Built by{" "}
             <a href="https://github.com/shireen-mvps" target="_blank" rel="noopener noreferrer"
-               className="text-k-text/80 hover:text-k-accent transition-colors">Shireen</a>
+              className="text-k-text/80 hover:text-k-accent transition-colors">Shireen</a>
             {" · "}Powered by Claude Code + Upstash Vector
           </p>
         </div>
       </footer>
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      {/* ══ RATE LIMIT MODAL ══ */}
+      {rateLimited && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-k-bg/80 backdrop-blur-md"
+            onClick={() => setRateLimited(false)}
+          />
+
+          {/* Card */}
+          <div className="relative z-10 w-full max-w-md bg-k-surface border border-k-accent/30 rounded-2xl p-8 shadow-[0_0_60px_rgba(232,160,32,0.12)]">
+
+            {/* Close */}
+            <button
+              onClick={() => setRateLimited(false)}
+              className="absolute top-4 right-4 text-k-dim hover:text-k-muted transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Icon */}
+            <div className="w-12 h-12 rounded-2xl bg-k-accent/10 border border-k-accent/20 flex items-center justify-center text-k-accent mb-5 mx-auto">
+              <IconLock className="w-6 h-6" />
+            </div>
+
+            {/* Heading */}
+            <h2 className="font-display font-bold text-k-text text-xl text-center mb-2">
+              You've reached the demo limit
+            </h2>
+            <p className="text-sm text-k-text/70 text-center leading-relaxed mb-6">
+              The free demo includes <span className="text-k-accent font-semibold">3 uploads</span> and <span className="text-k-accent font-semibold">20 questions</span> per day — enough to genuinely evaluate Konfide.
+              <br /><br />
+              For full access — unlimited documents, persistent storage, and team use — request access below.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col gap-3">
+              <a
+                href={WAITLIST_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-xl bg-k-accent text-k-bg text-sm font-bold text-center btn-glow hover:bg-k-accent2 transition-all"
+              >
+                Request full access →
+              </a>
+              <button
+                onClick={() => setRateLimited(false)}
+                className="w-full py-3 rounded-xl border border-white/10 text-sm text-k-text/70 hover:border-white/20 hover:text-k-text/90 transition-all"
+              >
+                Back to demo
+              </button>
+            </div>
+
+            {/* Fine print */}
+            <p className="text-xs text-k-text/40 text-center mt-4 font-mono">
+              Demo limits reset every 24 hours.
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

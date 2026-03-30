@@ -2,10 +2,20 @@ import { NextRequest } from "next/server";
 import pdfParse from "pdf-parse";
 import { vectorIndex } from "@/lib/upstash";
 import { chunkText } from "@/lib/chunker";
+import { uploadLimiter, getClientIP } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  // Rate limit check — 3 uploads per IP per 24 hours
+  const { success, remaining } = await uploadLimiter.limit(getClientIP(req));
+  if (!success) {
+    return Response.json(
+      { error: "RATE_LIMITED", remaining: 0 },
+      { status: 429 }
+    );
+  }
+
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   const docId = formData.get("docId") as string | null;
@@ -14,6 +24,9 @@ export async function POST(req: NextRequest) {
   if (!file || !docId) {
     return Response.json({ error: "Missing file or docId." }, { status: 400 });
   }
+
+  // Log remaining for monitoring
+  console.log(`[upload] IP ${getClientIP(req)} — uploads remaining today: ${remaining}`);
   if (file.type !== "application/pdf") {
     return Response.json({ error: "Only PDF files are supported." }, { status: 400 });
   }

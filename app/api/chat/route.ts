@@ -1,12 +1,23 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { createDataStreamResponse, streamText } from "ai";
 import { vectorIndex } from "@/lib/upstash";
+import { chatLimiter, getClientIP } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  // Rate limit check — 20 messages per IP per 24 hours
+  const { success, remaining } = await chatLimiter.limit(getClientIP(req));
+  if (!success) {
+    return Response.json(
+      { error: "RATE_LIMITED", remaining: 0 },
+      { status: 429 }
+    );
+  }
+
   try {
     const { messages, docId } = await req.json();
+    console.log(`[chat] IP ${getClientIP(req)} — messages remaining today: ${remaining}`);
 
     if (!docId) {
       return Response.json({ error: "No document loaded." }, { status: 400 });

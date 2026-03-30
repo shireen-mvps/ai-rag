@@ -54,10 +54,17 @@ export function useDocSession() {
   const [uploading, setUploading] = useState(false);
   const [uploadStep, setUploadStep] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [rateLimited, setRateLimited] = useState(false);
 
   const { messages, input, setInput, handleSubmit: _handleSubmit, isLoading, data, setMessages } = useChat({
     api: "/api/chat",
     body: { docId: activeDocId },
+    onError: (err) => {
+      // AI SDK surfaces HTTP errors as Error objects; check for 429 signal
+      if (err.message?.includes("429") || err.message?.includes("RATE_LIMITED")) {
+        setRateLimited(true);
+      }
+    },
     initialMessages: (() => {
       if (typeof window !== "undefined") {
         const s = loadStorage();
@@ -158,6 +165,11 @@ export function useDocSession() {
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
+
+      if (res.status === 429) {
+        setRateLimited(true);
+        return;
+      }
 
       if (!res.ok || !res.body) {
         const result = await res.json();
@@ -280,6 +292,8 @@ export function useDocSession() {
     input,
     setInput,
     handleSubmit,
+    rateLimited,
+    setRateLimited,
     isLoading,
     sources,
     uploading,
