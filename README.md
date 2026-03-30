@@ -77,6 +77,7 @@ User asks question → Embed query → Retrieve top 5 matching chunks
 
 ## Key Features
 
+- **Rate limiting.** Demo access is capped at 3 uploads and 20 chat messages per IP per 24 hours via Upstash Redis. Visitors who hit the limit see a "Request full access" modal linked to a waitlist form — update `WAITLIST_URL` in `app/page.tsx` with your own Tally/Typeform URL.
 - **Zero data to OpenAI.** Claude is used only to generate answers from pre-retrieved chunks — your documents never pass through it directly.
 - **Private vector storage.** All embeddings live in your own Upstash Vector index, isolated per document, in the region you choose.
 - **Inline source citations.** Every AI response tags statements with numbered citations `[1]` `[2]` linked directly to the retrieved passages.
@@ -98,6 +99,7 @@ User asks question → Embed query → Retrieve top 5 matching chunks
 | AI Model | Claude Sonnet 4.6 (Anthropic) |
 | AI SDK | Vercel AI SDK v4 + @ai-sdk/anthropic |
 | Vector Store | Upstash Vector (built-in embedding model) |
+| Rate Limiting | Upstash Redis + @upstash/ratelimit |
 | Auth | Supabase Auth (Google OAuth) |
 | PDF Parsing | pdf-parse |
 | Styling | Tailwind CSS v3 with custom design tokens |
@@ -174,7 +176,15 @@ npm install
 2. Choose **Dense** type with a built-in embedding model (recommended: `BAAI/bge-small-en-v1.5`)
 3. Copy your **REST URL** and **REST Token**
 
-### 4. Set up Supabase (optional — for auth + cross-device sync)
+### 4. Create your Upstash Redis database (for rate limiting)
+
+1. Go to [console.upstash.com](https://console.upstash.com) → **Redis** → **Create Database**
+2. Name it anything (e.g. `konfide-ratelimit`), pick a region close to your Vercel deployment
+3. Copy your **REST URL** and **REST Token**
+
+The free tier (10,000 commands/day) is more than enough. This is a **separate** database from your Vector index.
+
+### 5. Set up Supabase (optional — for auth + cross-device sync)
 
 1. Go to [supabase.com](https://supabase.com) → create a new project
 2. Enable **Google OAuth** under Authentication → Providers
@@ -193,7 +203,7 @@ create policy "Users can manage their own documents"
   on documents for all using (auth.uid() = user_id);
 ```
 
-### 5. Add environment variables
+### 6. Add environment variables
 
 ```bash
 cp .env.local.example .env.local
@@ -201,17 +211,23 @@ cp .env.local.example .env.local
 
 ```env
 ANTHROPIC_API_KEY=your_anthropic_key
+
+# Upstash Vector (document embeddings)
 UPSTASH_VECTOR_REST_URL=your_upstash_vector_url
 UPSTASH_VECTOR_REST_TOKEN=your_upstash_vector_token
 
-# Optional — for auth + cross-device sync
+# Upstash Redis (rate limiting — 3 uploads / 20 chats per IP per 24h)
+UPSTASH_REDIS_REST_URL=your_upstash_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_token
+
+# Optional — Supabase for Google auth + cross-device sync
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 Get your Anthropic API key at [console.anthropic.com](https://console.anthropic.com).
 
-### 6. Run locally
+### 7. Run locally
 
 ```bash
 npm run dev
